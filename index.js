@@ -298,8 +298,7 @@ ${responseStyle}`;
 9. 強調上帝的主權、預定論、唯獨恩典等改革宗核心教義
 10. ${responseStyle}
 
-Prompt 參考 ID: ${CALVIN_CONFIG.promptId}
-版本: ${CALVIN_CONFIG.version}`
+Prompt 參考 ID: ${CALVIN_CONFIG.promptId}`
                     },
                     {
                         role: "user",
