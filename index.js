@@ -27,7 +27,7 @@ const CALVIN_CONFIG = {
     maxResponseLength: 2000,
     responseDelay: 2000, // 回應延遲 (毫秒)
     blacklistedChannels: [], // 可以添加不想回應的頻道 ID
-    stopCommand: "/stop", // 停止指令
+    stopCommand: "/stop", // 停止指令改為 / 開頭
 };
 
 // 機器人狀態管理
@@ -77,6 +77,12 @@ client.on('messageCreate', async (message) => {
     try {
         // 忽略自己的訊息
         if (message.author.id === client.user.id) return;
+        
+        // 加爾文機器人不回應任何 ! 開頭的句子
+        if (message.content.trim().startsWith('!')) {
+            console.log(`⏭️ 忽略 ! 開頭的訊息: ${message.content.substring(0, 50)}...`);
+            return;
+        }
         
         // 檢查是否為停止/啟動指令
         if (message.content.trim() === CALVIN_CONFIG.stopCommand) {
