@@ -243,7 +243,7 @@ async function getCalvinResponse(message, isDirectMention = false) {
             
         const responseStyle = isDirectMention ? 
             "請提供詳細完整的改革宗神學回應，但保持對話風格，就像在和朋友深入討論神學話題。不要寫成學術文章或摘錄，要像自然的對話交流。" :
-            "請給出簡短自然的對話回應，就像朋友間的閒聊，最多30個中文字。避免長篇大論，保持輕鬆對話的語調。";
+            "請給出自然的對話回應，就像朋友間的閒聊，最多60個中文字。避免長篇大論，保持輕鬆對話的語調";
         
         // 構建包含所有上下文的輸入
         const fullInput = `對話上下文: ${conversationContext}
