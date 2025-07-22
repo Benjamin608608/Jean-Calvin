@@ -136,7 +136,7 @@ async function handleStopCommand(message) {
     updateBotPresence();
     
     console.log(`⏸️ 機器人已被 ${message.author.tag} 停止`);
-    await message.reply('⏸️ 約翰·加爾文機器人已停止回應。使用 `!start` 重新啟動。');
+    await message.reply('⏸️ 約翰·加爾文機器人已停止回應。使用 `/start` 重新啟動。');
 }
 
 // 處理啟動指令
