@@ -472,7 +472,7 @@ async function sendCalvinResponse(message, response, isDirectMention = false) {
 // 創建嵌入式回應
 function createCalvinEmbed(response, author, isDirectMention = false) {
     const embedTitle = isDirectMention ? 
-        '🛡️ 約翰·加爾文的詳細回應' : 
+        '🛡️ 約翰·加爾文的回應' : 
         '🛡️ 約翰·加爾文的回應';
         
     return new EmbedBuilder()
@@ -484,15 +484,15 @@ function createCalvinEmbed(response, author, isDirectMention = false) {
         .setTitle(embedTitle)
         .setDescription(response)
         .setFooter({
-            text: `回應給 ${author.displayName || author.username} • 基於加爾文神學著作`,
+            text: `回應給 ${author.displayName || author.username} `,
             iconURL: author.displayAvatarURL({ dynamic: true })
         })
         .setTimestamp()
         .addFields({
             name: '💡 提醒',
             value: isDirectMention ? 
-                '此為詳細回應，基於約翰·加爾文的神學著作和改革宗傳統' : 
-                '此回應基於約翰·加爾文的神學著作和改革宗傳統',
+                '此回應基於約翰·加爾文的神學著作和思想' : 
+                '此回應基於約翰·加爾文的神學著作和思想',
             inline: false
         });
 }
