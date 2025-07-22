@@ -1,0 +1,32 @@
+{
+  "name": "calvin-discord-bot",
+  "version": "1.0.0",
+  "description": "約翰·加爾文 Discord 機器人 - 基於改革宗神學著作的 AI 助手",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "john-calvin",
+    "reformed-theology",
+    "openai",
+    "christian"
+  ],
+  "author": "您的名字",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "openai": "^4.28.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
