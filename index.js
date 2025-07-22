@@ -85,7 +85,7 @@ client.on('messageCreate', async (message) => {
         }
         
         // 檢查是否為啟動指令
-        if (message.content.trim() === "!start") {
+        if (message.content.trim() === "/start") {
             await handleStartCommand(message);
             return;
         }
