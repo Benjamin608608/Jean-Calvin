@@ -27,7 +27,7 @@ const CALVIN_CONFIG = {
     maxResponseLength: 2000,
     responseDelay: 2000, // 回應延遲 (毫秒)
     blacklistedChannels: [], // 可以添加不想回應的頻道 ID
-    stopCommand: "!stop", // 停止指令
+    stopCommand: "/stop", // 停止指令
 };
 
 // 機器人狀態管理
