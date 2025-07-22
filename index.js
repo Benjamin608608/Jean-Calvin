@@ -22,7 +22,7 @@ const openai = new OpenAI({
 
 // 加爾文機器人配置
 const CALVIN_CONFIG = {
-    promptId: "pmpt_687f16ce57548195a6ebbf149f2adc5907ded20c34b488e2", // 您的加爾文 Prompt ID
+    promptId: "pmpt_687f16ce57548195a6ebbf149f2adc5907ded20c34b488e2",
     version: "1",
     maxResponseLength: 2000,
     responseDelay: 2000, // 回應延遲 (毫秒)
@@ -63,7 +63,6 @@ function updateBotPresence() {
         '研讀基督教要義與改革神學' : '已暫停回應 (!stop)';
     const status = botStatus.isActive ? 'online' : 'idle';
     
-    client.user.setPresence({
     client.user.setPresence({
         activities: [{
             name: activity,
