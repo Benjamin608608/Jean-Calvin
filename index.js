@@ -1,13 +1,4 @@
-// 加爾文機器人配置
-const CALVIN_CONFIG = {
-    promptId: "pmpt_687f16ce57548195a6ebbf149f2adc5907ded20c34b488e2",
-    version: "1",
-    maxResponseLength: 2000,
-    responseDelay: 2000, // 回應延遲 (毫秒)
-    blacklistedChannels: [], // 可以添加不想回應的頻道 ID
-    stopCommand: "/stop", // 停止指令改為 / 開頭
-    otherBotId: "1397068991230509146", // 馬丁路德機器人 ID
-    shortResponseTokens: 90,import { Client, GatewayIntentBits, EmbedBuilder, ActivityType } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, ActivityType } from 'discord.js';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
@@ -72,7 +63,7 @@ client.once('ready', () => {
 // 更新機器人狀態顯示
 function updateBotPresence() {
     const activity = botStatus.isActive ? 
-        '研讀基督教要義與改革神學' : '已暫停回應 (!stop)';
+        '研讀基督教要義與改革神學' : '已暫停回應 (/stop)';
     const status = botStatus.isActive ? 'online' : 'idle';
     
     client.user.setPresence({
