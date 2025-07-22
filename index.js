@@ -23,19 +23,20 @@ const openai = new OpenAI({
 // 加爾文機器人配置
 const CALVIN_CONFIG = {
     promptId: "pmpt_687f16ce57548195a6ebbf149f2adc5907ded20c34b488e2",
+    version: "1",
     maxResponseLength: 2000,
-    responseDelay: 2000,
-    blacklistedChannels: [],
-    stopCommand: "/stop",
-    otherBotId: "1397068991230509146",
-    shortResponseTokens: 90,
-    longResponseTokens: 1000,
+    responseDelay: 2000, // 回應延遲 (毫秒)
+    blacklistedChannels: [], // 可以添加不想回應的頻道 ID
+    stopCommand: "/stop", // 停止指令改為 / 開頭
+    otherBotId: "1397068991230509146", // 馬丁路德機器人 ID
+    shortResponseTokens: 90, // 簡短回應 token 限制
+    longResponseTokens: 1000, // 詳細回應 token 限制
 };
 
 // 機器人狀態管理
 const botStatus = {
-    isActive: true,
-    adminUsers: new Set(),
+    isActive: true, // 機器人是否啟用
+    adminUsers: new Set(), // 管理員用戶 ID
 };
 
 // 儲存最近的對話上下文
@@ -48,12 +49,14 @@ client.once('ready', () => {
     console.log(`🔗 機器人 ID: ${client.user.id}`);
     console.log(`📺 已加入 ${client.guilds.cache.size} 個伺服器`);
     
+    // 從環境變數讀取管理員 ID
     if (process.env.ADMIN_USER_IDS) {
         const adminIds = process.env.ADMIN_USER_IDS.split(',').map(id => id.trim());
         adminIds.forEach(id => botStatus.adminUsers.add(id));
         console.log(`👑 已設定 ${adminIds.length} 位管理員`);
     }
     
+    // 設置機器人狀態
     updateBotPresence();
 });
 
@@ -75,47 +78,61 @@ function updateBotPresence() {
 // 訊息處理
 client.on('messageCreate', async (message) => {
     try {
+        // 忽略自己的訊息
         if (message.author.id === client.user.id) return;
         
+        // 如果訊息 @ 了馬丁路德機器人，加爾文機器人不回應
         if (message.mentions.users.has(CALVIN_CONFIG.otherBotId)) {
             console.log(`⏭️ 忽略 @ 馬丁路德機器人的訊息: ${message.content.substring(0, 50)}...`);
             return;
         }
         
+        // 加爾文機器人不回應任何 ! 開頭的句子
         if (message.content.trim().startsWith('!')) {
             console.log(`⏭️ 忽略 ! 開頭的訊息: ${message.content.substring(0, 50)}...`);
             return;
         }
         
+        // 加爾文機器人不回應 ⏸️ 和 ▶️ 開頭的訊息
         if (message.content.trim().startsWith('⏸️') || message.content.trim().startsWith('▶️')) {
             console.log(`⏭️ 忽略控制狀態訊息: ${message.content.substring(0, 50)}...`);
             return;
         }
         
+        // 檢查是否為停止/啟動指令
         if (message.content.trim() === CALVIN_CONFIG.stopCommand) {
             await handleStopCommand(message);
             return;
         }
         
+        // 檢查是否為啟動指令
         if (message.content.trim() === "/start") {
             await handleStartCommand(message);
             return;
         }
         
+        // 如果機器人被停止，不回應其他訊息
         if (!botStatus.isActive) return;
         
+        // 檢查是否在黑名單頻道
         if (CALVIN_CONFIG.blacklistedChannels.includes(message.channel.id)) return;
         
+        // 檢測是否被直接提及（決定回應模式）
         const isDirectMention = message.mentions.has(client.user.id);
         const responseMode = isDirectMention ? "詳細" : "簡短";
         
         console.log(`📨 收到訊息 from ${message.author.tag} (${responseMode}模式): ${message.content.substring(0, 100)}...`);
         
+        // 更新對話歷史
         updateConversationHistory(message);
+        
+        // 顯示正在輸入狀態
         await message.channel.sendTyping();
         
+        // 延遲回應讓對話更自然
         setTimeout(async () => {
             try {
+                // 獲取加爾文的回應
                 const response = await getCalvinResponse(message, isDirectMention);
                 
                 if (response && response.trim()) {
@@ -160,8 +177,11 @@ async function handleStartCommand(message) {
     }
     
     botStatus.isActive = true;
+    
+    // 清空對話歷史，避免繼續之前的話題
     conversationHistory.clear();
     console.log('🗑️ 已清空對話歷史');
+    
     updateBotPresence();
     
     console.log(`▶️ 機器人已被 ${message.author.tag} 啟動`);
@@ -170,7 +190,10 @@ async function handleStartCommand(message) {
 
 // 檢查用戶是否有權限
 function isAuthorized(userId) {
+    // 如果沒有設定管理員，任何人都可以控制
     if (botStatus.adminUsers.size === 0) return true;
+    
+    // 檢查是否為授權管理員
     return botStatus.adminUsers.has(userId);
 }
 
@@ -190,6 +213,7 @@ function updateConversationHistory(message) {
         isBot: message.author.bot
     });
     
+    // 保持歷史記錄在限制範圍內
     if (history.length > MAX_HISTORY_LENGTH) {
         history.shift();
     }
@@ -198,6 +222,7 @@ function updateConversationHistory(message) {
 // 獲取對話上下文
 function getConversationContext(channelId) {
     const history = conversationHistory.get(channelId) || [];
+    
     return history.map(msg => 
         `${msg.author}: ${msg.content.substring(0, 200)}`
     ).join('\n');
@@ -211,14 +236,16 @@ async function getCalvinResponse(message, isDirectMention = false) {
         
         console.log(`🤖 調用 OpenAI API for: ${userMessage.substring(0, 50)}... (${isDirectMention ? '詳細' : '簡短'}模式)`);
         
+        // 根據是否被直接提及決定回應風格和長度
         const maxTokens = isDirectMention ? 
             CALVIN_CONFIG.longResponseTokens : 
             CALVIN_CONFIG.shortResponseTokens;
             
         const responseStyle = isDirectMention ? 
-            "請提供詳細完整的改革宗神學回應，但保持對話風格，就像在和朋友深入討論神學話題。不要寫成學術文章或摘錄，要像自然的對話交流。" :
+            "請提供詳細完整的改革宗神學回應，深入解釋相關教義和背景。" :
             "請給出簡短自然的對話回應，就像朋友間的閒聊，最多30個中文字。避免長篇大論，保持輕鬆對話的語調。";
         
+        // 構建包含所有上下文的輸入
         const fullInput = `對話上下文: ${conversationContext}
 
 用戶訊息: ${userMessage}
@@ -231,17 +258,18 @@ async function getCalvinResponse(message, isDirectMention = false) {
 
 ${responseStyle}`;
 
+        // 嘗試使用 Responses API 與您的 Prompt ID
         let response;
         try {
             console.log(`🔍 嘗試使用 Prompt ID: ${CALVIN_CONFIG.promptId} (max_tokens: ${maxTokens})`);
             
             response = await openai.responses.create({
-                prompt: {
-                    id: CALVIN_CONFIG.promptId,
-                    version: "14"  // 根據您的截圖，加爾文是版本 14
-                },
+                model: "gpt-4o", // 使用支援 Responses API 的模型
+                input: fullInput,
+                // 如果 Prompt ID 支援 instructions 參數
+                instructions: `使用 Prompt ID: ${CALVIN_CONFIG.promptId} 版本: ${CALVIN_CONFIG.version}。以約翰·加爾文的身份回應，基於向量資料庫中的加爾文著作。這是即時對話，請直接回答問題，不要使用書信格式、開頭稱呼語、結尾祝福語或署名。像面對面對話一樣自然回應。${responseStyle}`,
                 max_output_tokens: maxTokens,
-                temperature: isDirectMention ? 0.4 : 0.6
+                temperature: isDirectMention ? 0.4 : 0.6 // 簡短回應稍微提高創造性
             });
             
             console.log('✅ Responses API 調用成功');
@@ -250,8 +278,9 @@ ${responseStyle}`;
             console.log('🔄 Responses API 失敗，使用備用方法...');
             console.error('Responses API 錯誤:', responsesError.message);
             
+            // 備用方法：使用 Chat Completions API
             response = await openai.chat.completions.create({
-                model: "gpt-4",
+                model: "gpt-4", // 備用模型
                 messages: [
                     {
                         role: "system",
@@ -268,7 +297,8 @@ ${responseStyle}`;
 9. 強調上帝的主權、預定論、唯獨恩典等改革宗核心教義
 10. ${responseStyle}
 
-Prompt 參考 ID: ${CALVIN_CONFIG.promptId}`
+Prompt 參考 ID: ${CALVIN_CONFIG.promptId}
+版本: ${CALVIN_CONFIG.version}`
                     },
                     {
                         role: "user",
@@ -282,20 +312,25 @@ Prompt 參考 ID: ${CALVIN_CONFIG.promptId}`
             console.log('✅ Chat Completions API 調用成功');
         }
 
+        // 處理不同 API 的回應格式
         let responseContent;
         
         if (response.output_text) {
+            // Responses API 格式
             responseContent = response.output_text;
         } else if (response.choices?.[0]?.message?.content) {
+            // Chat Completions API 格式
             responseContent = response.choices[0].message.content;
         } else {
             console.log('🔍 未知回應格式:', JSON.stringify(response, null, 2));
             responseContent = null;
         }
 
+        // 清理書信格式的後處理
         if (responseContent) {
             responseContent = cleanLetterFormat(responseContent);
             
+            // 如果是簡短模式，進一步確保回應簡潔
             if (!isDirectMention) {
                 responseContent = ensureShortResponse(responseContent);
             }
@@ -315,6 +350,7 @@ function cleanLetterFormat(text) {
     
     let cleaned = text.trim();
     
+    // 移除開頭的稱呼語
     const greetingPatterns = [
         /^親愛的[^，。！？\n]*[，。！？\n]/,
         /^敬愛的[^，。！？\n]*[，。！？\n]/,
@@ -329,6 +365,7 @@ function cleanLetterFormat(text) {
         cleaned = cleaned.replace(pattern, '');
     }
     
+    // 移除結尾的祝福語和署名
     const endingPatterns = [
         /\n*願上帝[^。！]*[。！]?\s*$/,
         /\n*在基督裡[^。！]*[。！]?\s*$/,
@@ -346,6 +383,7 @@ function cleanLetterFormat(text) {
         cleaned = cleaned.replace(pattern, '');
     }
     
+    // 移除多餘的換行和空格
     cleaned = cleaned.replace(/\n\s*\n/g, '\n').trim();
     
     return cleaned;
@@ -355,40 +393,40 @@ function cleanLetterFormat(text) {
 function ensureShortResponse(text) {
     if (!text || typeof text !== 'string') return text;
     
+    // 移除多餘的換行
     let cleaned = text.replace(/\n+/g, ' ').trim();
     
-    const sentences = cleaned.split(/(?<=[。！？.!?])/);
+    // 按句子分割
+    const sentences = cleaned.split(/[。！？.!?]/);
     
+    // 如果超過30個中文字，取前面的句子
     let result = '';
     for (const sentence of sentences) {
-        const potential = result + sentence;
-        if (potential.replace(/[^\u4e00-\u9fa5]/g, '').length <= 35) {
+        const potential = result + sentence + '。';
+        if (potential.replace(/[^\u4e00-\u9fa5]/g, '').length <= 35) { // 稍微寬鬆一些
             result = potential;
         } else {
             break;
         }
     }
     
+    // 如果結果為空或太短，取原文前30個中文字
     if (!result || result.length < 10) {
         const chineseChars = cleaned.match(/[\u4e00-\u9fa5]/g);
         if (chineseChars && chineseChars.length > 30) {
-            result = cleaned.substring(0, 50);
+            result = cleaned.substring(0, 50); // 大概取前50個字符
         } else {
             result = cleaned;
         }
     }
     
-    result = result.trim();
-    if (result && !result.match(/[。！？.!?]$/)) {
-        result += '。';
-    }
-    
-    return result;
+    return result.trim();
 }
 
 // 發送加爾文回應
 async function sendCalvinResponse(message, response, isDirectMention = false) {
     try {
+        // 處理過長的回應
         if (response.length > CALVIN_CONFIG.maxResponseLength) {
             const chunks = splitMessage(response, CALVIN_CONFIG.maxResponseLength);
             
@@ -396,27 +434,33 @@ async function sendCalvinResponse(message, response, isDirectMention = false) {
                 const chunk = chunks[i];
                 
                 if (chunks.length > 1) {
+                    // 多段訊息標記
                     const partIndicator = `(${i + 1}/${chunks.length})`;
                     await message.channel.send(`${chunk} ${partIndicator}`);
                 } else {
                     await message.channel.send(chunk);
                 }
                 
+                // 避免發送過快
                 if (i < chunks.length - 1) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
         } else {
+            // 根據回應模式決定發送方式
             if (isDirectMention || response.length > 500) {
+                // 詳細回應或較長回應使用嵌入式
                 const embed = createCalvinEmbed(response, message.author, isDirectMention);
                 await message.channel.send({ embeds: [embed] });
             } else {
+                // 簡短回應直接發送
                 await message.channel.send(response);
             }
         }
         
     } catch (error) {
         console.error('發送回應時發生錯誤:', error);
+        // 如果嵌入式發送失敗，嘗試純文字
         try {
             await message.channel.send(response.substring(0, CALVIN_CONFIG.maxResponseLength));
         } catch (fallbackError) {
@@ -432,7 +476,7 @@ function createCalvinEmbed(response, author, isDirectMention = false) {
         '🛡️ 約翰·加爾文的回應';
         
     return new EmbedBuilder()
-        .setColor(0x2F4F4F)
+        .setColor(0x2F4F4F) // 深灰色，象徵加爾文的嚴謹
         .setAuthor({
             name: '約翰·加爾文 (John Calvin)',
             iconURL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/John_Calvin_by_Holbein.jpg/256px-John_Calvin_by_Holbein.jpg'
@@ -458,6 +502,7 @@ function splitMessage(text, maxLength) {
     const chunks = [];
     let currentChunk = '';
     
+    // 優先按句號分割
     const sentences = text.split(/(?<=[。！？.!?])\s*/);
     
     for (const sentence of sentences) {
@@ -468,6 +513,7 @@ function splitMessage(text, maxLength) {
                 chunks.push(currentChunk.trim());
                 currentChunk = sentence;
             } else {
+                // 單句過長，強制分割
                 const words = sentence.split('');
                 let tempChunk = '';
                 
@@ -513,6 +559,7 @@ async function handleResponseError(message, error) {
     }
     
     try {
+        // 只在被直接提及時才發送錯誤訊息
         if (message.mentions.has(client.user)) {
             await message.channel.send(errorMessage);
         }
@@ -533,19 +580,6 @@ process.on('SIGINT', async () => {
         console.error('關閉時發生錯誤:', error);
     }
     
-    process.exit(0);
-});
-
-// 處理 SIGTERM 信號
-process.on('SIGTERM', async () => {
-    console.log('🔄 收到 SIGTERM，正在優雅關閉...');
-    try {
-        await client.user.setStatus('invisible');
-        client.destroy();
-        console.log('✅ 機器人已安全關閉');
-    } catch (error) {
-        console.error('關閉時發生錯誤:', error);
-    }
     process.exit(0);
 });
 
