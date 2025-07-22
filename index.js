@@ -242,7 +242,7 @@ async function getCalvinResponse(message, isDirectMention = false) {
             CALVIN_CONFIG.shortResponseTokens;
             
         const responseStyle = isDirectMention ? 
-            "請提供詳細完整的改革宗神學回應，深入解釋相關教義和背景。" :
+            "請提供詳細完整的改革宗神學回應，但保持對話風格，就像在和朋友深入討論神學話題。不要寫成學術文章或摘錄，要像自然的對話交流。" :
             "請給出簡短自然的對話回應，就像朋友間的閒聊，最多30個中文字。避免長篇大論，保持輕鬆對話的語調。";
         
         // 構建包含所有上下文的輸入
@@ -258,18 +258,19 @@ async function getCalvinResponse(message, isDirectMention = false) {
 
 ${responseStyle}`;
 
-        // 嘗試使用 Responses API 與您的 Prompt ID
+        // 嘗試使用正確的 Responses API 調用方式
         let response;
         try {
-            console.log(`🔍 嘗試使用 Prompt ID: ${CALVIN_CONFIG.promptId} (max_tokens: ${maxTokens})`);
+            console.log(`🔍 嘗試使用 Prompt ID: ${CALVIN_CONFIG.promptId} 版本: ${CALVIN_CONFIG.version} (max_tokens: ${maxTokens})`);
             
             response = await openai.responses.create({
-                model: "gpt-4o", // 使用支援 Responses API 的模型
+                prompt: {
+                    id: CALVIN_CONFIG.promptId,
+                    version: CALVIN_CONFIG.version
+                },
                 input: fullInput,
-                // 如果 Prompt ID 支援 instructions 參數
-                instructions: `使用 Prompt ID: ${CALVIN_CONFIG.promptId} 版本: ${CALVIN_CONFIG.version}。以約翰·加爾文的身份回應，基於向量資料庫中的加爾文著作。這是即時對話，請直接回答問題，不要使用書信格式、開頭稱呼語、結尾祝福語或署名。像面對面對話一樣自然回應。${responseStyle}`,
                 max_output_tokens: maxTokens,
-                temperature: isDirectMention ? 0.4 : 0.6 // 簡短回應稍微提高創造性
+                temperature: isDirectMention ? 0.4 : 0.6
             });
             
             console.log('✅ Responses API 調用成功');
@@ -396,13 +397,13 @@ function ensureShortResponse(text) {
     // 移除多餘的換行
     let cleaned = text.replace(/\n+/g, ' ').trim();
     
-    // 按句子分割
-    const sentences = cleaned.split(/[。！？.!?]/);
+    // 按句子分割（保留標點符號）
+    const sentences = cleaned.split(/(?<=[。！？.!?])/);
     
     // 如果超過30個中文字，取前面的句子
     let result = '';
     for (const sentence of sentences) {
-        const potential = result + sentence + '。';
+        const potential = result + sentence;
         if (potential.replace(/[^\u4e00-\u9fa5]/g, '').length <= 35) { // 稍微寬鬆一些
             result = potential;
         } else {
@@ -410,17 +411,23 @@ function ensureShortResponse(text) {
         }
     }
     
-    // 如果結果為空或太短，取原文前30個中文字
+    // 如果結果為空或太短，取原文前50個字符
     if (!result || result.length < 10) {
         const chineseChars = cleaned.match(/[\u4e00-\u9fa5]/g);
         if (chineseChars && chineseChars.length > 30) {
-            result = cleaned.substring(0, 50); // 大概取前50個字符
+            result = cleaned.substring(0, 50);
         } else {
             result = cleaned;
         }
     }
     
-    return result.trim();
+    // 確保結尾有句號（但不重複）
+    result = result.trim();
+    if (result && !result.match(/[。！？.!?]$/)) {
+        result += '。';
+    }
+    
+    return result;
 }
 
 // 發送加爾文回應
@@ -580,6 +587,19 @@ process.on('SIGINT', async () => {
         console.error('關閉時發生錯誤:', error);
     }
     
+    process.exit(0);
+});
+
+// 處理 SIGTERM 信號
+process.on('SIGTERM', async () => {
+    console.log('🔄 收到 SIGTERM，正在優雅關閉...');
+    try {
+        await client.user.setStatus('invisible');
+        client.destroy();
+        console.log('✅ 機器人已安全關閉');
+    } catch (error) {
+        console.error('關閉時發生錯誤:', error);
+    }
     process.exit(0);
 });
 
