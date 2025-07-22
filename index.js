@@ -23,7 +23,7 @@ const openai = new OpenAI({
 // 加爾文機器人配置
 const CALVIN_CONFIG = {
     promptId: "pmpt_687f16ce57548195a6ebbf149f2adc5907ded20c34b488e2",
-    version: "16",
+    version: "1",
     maxResponseLength: 2000,
     responseDelay: 2000, // 回應延遲 (毫秒)
     blacklistedChannels: [], // 可以添加不想回應的頻道 ID
