@@ -84,6 +84,12 @@ client.on('messageCreate', async (message) => {
             return;
         }
         
+        // 加爾文機器人不回應 ⏸️ 和 ▶️ 開頭的訊息
+        if (message.content.trim().startsWith('⏸️') || message.content.trim().startsWith('▶️')) {
+            console.log(`⏭️ 忽略控制狀態訊息: ${message.content.substring(0, 50)}...`);
+            return;
+        }
+        
         // 檢查是否為停止/啟動指令
         if (message.content.trim() === CALVIN_CONFIG.stopCommand) {
             await handleStopCommand(message);
