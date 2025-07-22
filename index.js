@@ -159,7 +159,7 @@ async function handleStartCommand(message) {
     }
     
     if (botStatus.isActive) {
-        await message.reply('✅ 機器人已經在運行中。');
+        await message.reply('▶️ 機器人已經在運行中。');
         return;
     }
     
