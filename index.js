@@ -236,8 +236,10 @@ ${responseStyle}`;
             console.log(`🔍 嘗試使用 Prompt ID: ${CALVIN_CONFIG.promptId} (max_tokens: ${maxTokens})`);
             
             response = await openai.responses.create({
-                model: CALVIN_CONFIG.promptId,
-                input: fullInput,
+                prompt: {
+                    id: CALVIN_CONFIG.promptId,
+                    version: "14"  // 根據您的截圖，加爾文是版本 14
+                },
                 max_output_tokens: maxTokens,
                 temperature: isDirectMention ? 0.4 : 0.6
             });
