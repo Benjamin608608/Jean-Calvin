@@ -152,10 +152,15 @@ async function handleStartCommand(message) {
     }
     
     botStatus.isActive = true;
+    
+    // 清空對話歷史，避免繼續之前的話題
+    conversationHistory.clear();
+    console.log('🗑️ 已清空對話歷史');
+    
     updateBotPresence();
     
     console.log(`▶️ 機器人已被 ${message.author.tag} 啟動`);
-    await message.reply('▶️ 約翰·加爾文機器人已重新啟動，將繼續回應訊息。');
+    await message.reply('▶️ 約翰·加爾文機器人已重新啟動，將繼續回應訊息。對話歷史已清空。');
 }
 
 // 檢查用戶是否有權限
